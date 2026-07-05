@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ophthalmologist Referral Finder - Brisbane Metro</title>
+<style>
+  :root{
+    --bg:#e8dfce;--bg-2:#eae0cd;
+    --panel:#f5f0e4;--inset:#fbf8f0;
+    --ink:#332e26;--muted:#8d8169;--label:#9a8d72;
+    --line:#e6ddca;--line-strong:#d9cdb4;
+    --accent:#bb6a3d;--accent-dark:#a1572f;--accent-soft:#efe0d0;--accent-tint:#f6ece0;
+    --slate:#5d7b88;--slate-soft:#e3ebec;--slate-ink:#3f5b66;
+    --green:#5f7d54;--amber:#9c7a2c;--amber-soft:#f3e8c9;
+    --shadow:0 1px 2px rgba(86,64,32,.04),0 8px 22px rgba(92,68,38,.07);
+    --shadow-sm:0 1px 2px rgba(86,64,32,.05),0 2px 8px rgba(92,68,38,.05);
+    --radius:18px;
+    --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);background-image:radial-gradient(130% 90% at 50% -15%,var(--bg-2),var(--bg));color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:980px;margin:0 auto;padding:30px 22px 90px;}
+
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px;}
+  h1{font-family:var(--serif);font-size:30px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em;color:#2c271f;}
+  .sub{color:var(--muted);font-size:13.5px;margin:0;}
+  .toolbtns{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:11px;font-size:13.5px;transition:background .14s,color .14s,border-color .14s,box-shadow .14s;}
+  .ghost{background:transparent;border:1px solid var(--line-strong);color:#6a5f49;padding:8px 13px;font-weight:500;}
+  .ghost:hover{border-color:var(--accent);color:var(--accent-dark);background:var(--inset);}
+  .primary{background:linear-gradient(180deg,#c4744a,#b4623a);color:#fdf6ee;padding:9px 15px;font-weight:600;box-shadow:0 1px 2px rgba(120,70,30,.22),0 4px 12px rgba(150,82,40,.18);}
+  .primary:hover{background:linear-gradient(180deg,#bb6a40,#a4562f);}
+
+  /* Sticky controls */
+  .controls{position:sticky;top:0;z-index:20;background:rgba(238,228,207,.86);backdrop-filter:saturate(140%) blur(10px);-webkit-backdrop-filter:saturate(140%) blur(10px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:10px;}
+  .searchbox{position:relative;margin-bottom:12px;}
+  .searchbox input{width:100%;padding:13px 16px 13px 44px;font-size:15.5px;border-radius:12px;border:1px solid var(--line-strong);background:var(--inset);color:var(--ink);}
+  .searchbox input::placeholder{color:#a99c84;}
+  .searchbox input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+  .searchbox .icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;}
+  .dropdown{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 6px);background:var(--inset);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 12px 32px rgba(92,68,38,.18);max-height:340px;overflow:auto;display:none;}
+  .dropdown.show{display:block;}
+  .dd-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;}
+  .dd-item:last-child{border-bottom:none;}
+  .dd-item:hover,.dd-item.active{background:var(--accent-tint);}
+  .dd-name{font-weight:600;font-size:14px;}
+  .dd-meta{color:var(--muted);font-size:12.5px;text-align:right;white-space:nowrap;}
+  .dd-empty{padding:14px;color:var(--muted);font-size:13.5px;}
+
+  .control-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .segmented{display:inline-flex;flex-wrap:wrap;background:var(--inset);border:1px solid var(--line-strong);border-radius:11px;padding:3px;gap:2px;}
+  .seg{background:transparent;color:var(--muted);padding:7px 14px;border-radius:8px;font-weight:500;font-size:13px;}
+  .seg:hover{color:var(--accent-dark);}
+  .seg.on{background:var(--accent);color:#fdf6ee;font-weight:600;box-shadow:var(--shadow-sm);}
+  .select-wrap{position:relative;margin-left:auto;}
+  .select-wrap::after{content:"⌄";position:absolute;right:13px;top:48%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:14px;}
+  #subSelect{appearance:none;-webkit-appearance:none;background:var(--inset);border:1px solid var(--line-strong);color:#6a5f49;font-family:inherit;font-size:13px;padding:8px 32px 8px 13px;border-radius:11px;cursor:pointer;}
+  #subSelect:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+
+  .note-line{font-size:12px;color:var(--muted);margin:0 4px 18px;line-height:1.55;}
+  .note-line b{color:#6d531a;}
+  .note-line a{color:var(--accent-dark);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+
+  .count{font-size:11.5px;color:var(--muted);margin:0 4px 14px;text-transform:uppercase;letter-spacing:.08em;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:18px 19px 14px;display:flex;flex-direction:column;transition:box-shadow .15s,transform .12s,border-color .15s;}
+  .card:hover{box-shadow:0 2px 6px rgba(86,64,32,.06),0 14px 30px rgba(92,68,38,.1);}
+  .card.flash{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint),var(--shadow);}
+
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .name{font-family:var(--serif);font-size:18.5px;font-weight:600;margin:0;letter-spacing:-.005em;color:#2c271f;line-height:1.25;}
+  .meta{font-size:12px;color:var(--muted);margin:4px 0 0;line-height:1.5;}
+  .meta .qual{color:var(--accent-dark);font-weight:600;}
+  .sys-badge{flex:none;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:4px 9px;border-radius:7px;margin-top:2px;}
+  .sys-badge.private{background:var(--accent-soft);color:var(--accent-dark);}
+  .sys-badge.public{background:var(--slate-soft);color:var(--slate-ink);}
+  .fee{font-size:11.5px;color:var(--muted);margin:9px 0 0;padding-top:9px;border-top:1px solid var(--line);}
+  .langs{font-size:11.5px;color:var(--muted);margin:7px 0 0;}
+  .loc .hours{color:var(--accent-dark);font-size:12px;font-weight:500;margin:0 0 7px;}
+
+  .loc{margin-top:13px;padding-top:13px;border-top:1px dashed var(--line-strong);}
+  .loc .clinic{font-weight:600;font-size:13.5px;margin:0 0 2px;color:#473f31;line-height:1.4;}
+  .loc .addr{color:var(--muted);font-size:12.5px;margin:0 0 7px;}
+  .contacts{font-family:var(--mono);font-size:12px;color:#4a4234;display:flex;flex-direction:column;gap:2px;margin-bottom:8px;}
+  .contacts .k{display:inline-block;width:13px;color:var(--muted);font-family:var(--sans);font-weight:600;}
+  .note{font-size:12px;color:#5a503e;background:var(--accent-tint);border:1px solid #ecdcc9;border-radius:9px;padding:8px 11px;margin:0 0 9px;white-space:pre-line;line-height:1.5;}
+  .loc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .verify-badge{background:var(--amber-soft);color:var(--amber);font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;border:1px solid #e7d6a8;}
+  .copybtn{background:linear-gradient(180deg,#c4744a,#b4623a);color:#fdf6ee;padding:7px 15px;font-weight:600;border-radius:9px;display:inline-flex;align-items:center;gap:6px;font-size:13px;box-shadow:var(--shadow-sm);margin-left:auto;}
+  .copybtn:hover{background:linear-gradient(180deg,#bb6a40,#a4562f);}
+  .copybtn.done{background:var(--green);}
+
+  .card-foot{margin-top:auto;padding-top:13px;display:flex;gap:14px;opacity:0;transition:opacity .15s;}
+  .card:hover .card-foot{opacity:1;}
+  .linkbtn{background:none;color:var(--muted);font-size:12px;padding:2px 0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .linkbtn:hover{color:var(--accent-dark);}
+  .linkbtn.del:hover{color:#b3503e;}
+
+  .empty-state{text-align:center;color:var(--muted);padding:60px 20px;font-size:15px;}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(60,46,26,.4);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:30px 16px;overflow:auto;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--panel);border-radius:var(--radius);max-width:620px;width:100%;box-shadow:0 24px 60px rgba(50,34,16,.32);padding:24px;}
+  .modal h2{font-family:var(--serif);margin:0 0 4px;font-size:20px;font-weight:600;color:#2c271f;}
+  .modal .hint{color:var(--muted);font-size:12.5px;margin:0 0 18px;}
+  .frow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .field{flex:1;min-width:140px;display:flex;flex-direction:column;gap:5px;}
+  .field.full{flex-basis:100%;}
+  .field label{font-size:11px;color:var(--label);font-weight:600;text-transform:uppercase;letter-spacing:.07em;}
+  .field input,.field select,.field textarea{padding:9px 12px;border:1px solid var(--line-strong);border-radius:9px;font-size:14px;font-family:inherit;background:var(--inset);color:var(--ink);}
+  .field textarea{resize:vertical;min-height:54px;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+  .loc-block{border:1px solid var(--line);border-radius:11px;padding:13px;margin-bottom:12px;background:#f0e9da;}
+  .loc-block .lh{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
+  .loc-block .lh b{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--label);}
+  .modal-actions{display:flex;justify-content:space-between;gap:10px;margin-top:8px;align-items:center;}
+  .modal-actions .right{display:flex;gap:8px;margin-left:auto;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#3a3225;color:#f6efe2;padding:12px 22px;border-radius:11px;font-size:13.5px;box-shadow:0 10px 28px rgba(40,28,12,.3);opacity:0;transition:opacity .2s,transform .2s;z-index:60;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  footer{margin-top:38px;color:var(--muted);font-size:12px;text-align:center;line-height:1.7;}
+  @media(max-width:540px){.grid{grid-template-columns:1fr;}h1{font-size:25px;}.select-wrap{margin-left:0;width:100%;}#subSelect{width:100%;}.segmented{width:100%;justify-content:space-between;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Ophthalmologist Referral Finder</h1>
+      <p class="sub">Brisbane metro · find a doctor, clinic, or public pathway - then copy a referral-ready block</p>
+    </div>
+    <div class="toolbtns">
+      <button class="primary" onclick="openAdd()">+ Add</button>
+      <button class="ghost" onclick="exportData()">Export</button>
+      <button class="ghost" onclick="document.getElementById('importFile').click()">Import</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="searchbox">
+      <span class="icon">⌕</span>
+      <input id="search" type="text" autocomplete="off" placeholder="Search name, clinic, suburb, 'cataract', 'public', 'PAH'…"
+             oninput="onSearch()" onkeydown="onSearchKey(event)" onfocus="onSearch()">
+      <div class="dropdown" id="dropdown"></div>
+    </div>
+    <div class="control-row">
+      <div class="segmented" id="kindFilters"></div>
+      <div class="select-wrap"><select id="subSelect" onchange="setSub(this.value||null)"></select></div>
+    </div>
+  </div>
+
+  <p class="note-line"><b>Verify before use.</b> Pre-filled from public practice &amp; Queensland Health sites; details change. Amber-flagged cards are missing a phone/email. Edits save in this browser only - <a onclick="exportData()">export a backup</a>. Fees and referral criteria are guides, not quotes.</p>
+
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="emptyState" style="display:none">No matches. Try a different term - or <button class="linkbtn" onclick="openAdd()" style="font-size:15px">add a new entry</button>.</div>
+
+  <footer>
+    Personal referral aid · not a complete register of ophthalmologists or services · always confirm current details, fees and referral criteria.<br>
+    Data saved locally in your browser. Use Export regularly to keep a backup file.
+  </footer>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">Add entry</h2>
+    <p class="hint">Each location gets its own Copy button. Use the Note field for referral-pathway details (e.g. fax to central hub, triage criteria).</p>
+    <div class="frow">
+      <div class="field" style="max-width:170px"><label>Type</label>
+        <select id="f_kind"><option value="doctor">Ophthalmologist (private)</option><option value="clinic">Clinic / practice (private)</option><option value="public">Public hospital / pathway</option></select></div>
+      <div class="field" style="max-width:120px"><label>Title</label><input id="f_title" placeholder="Dr / Prof"></div>
+      <div class="field" style="flex:2"><label>Name *</label><input id="f_name" placeholder="Brendan Cronin / Clinic name"></div>
+    </div>
+    <div class="field full" style="margin-bottom:12px"><label>Subspecialties / tags (comma separated)</label><input id="f_subs" placeholder="Cornea, Cataract"></div>
+    <div class="field full" style="margin-bottom:12px"><label>Languages (comma separated, optional)</label><input id="f_langs" placeholder="English, Mandarin"></div>
+    <div id="locContainer"></div>
+    <button class="ghost" onclick="addLocBlock()" style="margin-bottom:14px">+ Add another location</button>
+    <div class="modal-actions">
+      <button class="ghost" id="deleteBtn" style="color:#b3503e;border-color:#e6c4ba;display:none" onclick="deleteCurrent()">Delete</button>
+      <div class="right">
+        <button class="ghost" onclick="closeModal()">Cancel</button>
+        <button class="primary" onclick="saveEntry()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* entry = { kind:'doctor'|'clinic'|'public', title, name, subs:[],
+             locations:[ {clinic,address,suburb,state,postcode,phone,fax,email,note} ] } */
+function qei(title,name,subs){return{kind:'doctor',title,name,subs,locations:[{clinic:"Queensland Eye Institute (QEI), Woolloongabba Clinic",address:"87 Ipswich Road",suburb:"Woolloongabba",state:"QLD",postcode:"4102",phone:"07 3239 5000",fax:"07 3844 2246",email:"reception@qei.org.au",note:""}]};}
+function tec(title,name,subs){return{kind:'doctor',title,name,subs,locations:[{clinic:"Terrace Eye Centre",address:"Level 2, 87 Wickham Terrace",suburb:"Spring Hill",state:"QLD",postcode:"4000",phone:"07 3831 0101",fax:"07 3831 3203",email:"admin@terraceeyecentre.com.au",note:""}]};}
+function cec(title,name,subs){return{kind:'doctor',title,name,subs,locations:[{clinic:"City Eye Centre, Watkins Medical Centre",address:"Level 10, 225 Wickham Terrace",suburb:"Brisbane",state:"QLD",postcode:"4000",phone:"07 3831 6888",fax:"07 3831 6883",email:"appointments@cityeye.com.au",note:""}]};}
+function nesL(){return{clinic:"Northside Eye Specialists",address:"3/956 Gympie Road",suburb:"Chermside",state:"QLD",postcode:"4032",phone:"07 3359 8886",fax:"07 3359 5557",email:"reception@northsideeyes.com.au",note:""};}
+function cceL(){return{clinic:"Conrad Eye Care, Wesley Hospital, Suite 68 Level 3 Sandford Jackson Building",address:"30 Chasely Street",suburb:"Auchenflower",state:"QLD",postcode:"4066",phone:"07 3217 7399",fax:"07 3217 8129",email:"info@conradeyecare.com.au",note:""};}
+function bnecL(note){return{clinic:"Brisbane North Eye Centre",address:"708 Gympie Road",suburb:"Chermside",state:"QLD",postcode:"4032",phone:"07 3359 1169",fax:"07 3350 2880",email:"enquiries@bnec.com.au",note:note||"Parking via Norman Drive. Referrals also via reports@bnec.com.au, Oculo or Medical-Objects."};}
+function bnec(title,name,subs){return{kind:'doctor',title,name,subs,locations:[bnecL()]};}
+function ves(title,name,subs){return{kind:'doctor',title,name,subs,locations:[vesLn()]};}
+function clinic(name,subs,loc){return{kind:'clinic',title:"",name,subs,locations:[loc]};}
+function qersL(){return{clinic:"Queensland Eye & Retina Specialists, Boundary Court (blue wing), Ground Floor",address:"55 Little Edward Street",suburb:"Spring Hill",state:"QLD",postcode:"4000",phone:"07 3555 5960",fax:"07 3555 5961",email:"admin@qers.com.au",note:""};}
+function qers(title,name,subs){return{kind:'doctor',title,name,subs,locations:[qersL()]};}
+function tehcL(note){return{clinic:"The Eye Health Centre (City \u00b7 Aspley \u00b7 Wynnum \u00b7 Springfield)",address:"",suburb:"Brisbane City",state:"QLD",postcode:"4000",phone:"07 3831 8606",fax:"",email:"practicemanager@tehc.com.au",note:note||"Four sites - reception books to the relevant rooms. Confirm the street address for the site you want."};}
+function tehc(title,name,subs){return{kind:'doctor',title,name,subs,locations:[tehcL()]};}
+function okkoLn(note){return{clinic:"OKKO Eye Specialist Centre",address:"Level 1, 401 Milton Road",suburb:"Auchenflower",state:"QLD",postcode:"4066",phone:"07 3725 0222",fax:"",email:"",note:note||"Also at 2072 Logan Road, Upper Mt Gravatt (4122)."};}
+function okkoAuch(note,hours){const o={clinic:"OKKO Eye Specialist Centre (Auchenflower)",address:"Level 1, 401 Milton Road",suburb:"Auchenflower",state:"QLD",postcode:"4066",phone:"07 3725 0222",fax:"",email:"",note:note||""};if(hours)o.hours=hours;return o;}
+function okkoMtG(note,hours){const o={clinic:"OKKO Eye Specialist Centre (Upper Mt Gravatt)",address:"2072 Logan Road",suburb:"Upper Mount Gravatt",state:"QLD",postcode:"4122",phone:"07 3725 0222",fax:"",email:"",note:note||""};if(hours)o.hours=hours;return o;}
+function okko(title,name,subs){return{kind:'doctor',title,name,subs,locations:[okkoLn()]};}
+function becL(){return{clinic:"Brisbane Eye Clinic",address:"Level 1, 135 Wickham Terrace",suburb:"Spring Hill",state:"QLD",postcode:"4000",phone:"07 3832 1700",fax:"07 3831 3129",email:"reception@brisbaneeyeclinic.com.au",note:""};}
+function bec(title,name,subs){return{kind:'doctor',title,name,subs,locations:[becL()]};}
+function veiL(note){return{clinic:"Vision Eye Institute, Brisbane (RiverCity Private Hospital)",address:"Level 2, 401 Milton Road",suburb:"Auchenflower",state:"QLD",postcode:"4066",phone:"07 3736 3015",fax:"07 3736 3096",email:"",note:note||""};}
+function cecLn(note){return{clinic:"City Eye Centre, Watkins Medical Centre",address:"Level 10, 225 Wickham Terrace",suburb:"Brisbane",state:"QLD",postcode:"4000",phone:"07 3831 6888",fax:"07 3831 6883",email:"appointments@cityeye.com.au",note:note||""};}
+function vesLn(note){return{clinic:"Valley Eye Specialists",address:"51 Ballow Street",suburb:"Fortitude Valley",state:"QLD",postcode:"4006",phone:"07 3144 1655",fax:"",email:"info@valleyeye.com.au",note:note||""};}
+function tecLn(note){return{clinic:"Terrace Eye Centre",address:"Level 2, 87 Wickham Terrace",suburb:"Spring Hill",state:"QLD",postcode:"4000",phone:"07 3831 0101",fax:"07 3831 3203",email:"admin@terraceeyecentre.com.au",note:note||""};}
+
+const SEED = [
+  /* PUBLIC HOSPITALS & REFERRAL PATHWAYS */
+  {kind:'public',title:"",name:"Metro South - Central Referral Hub (public referrals, incl. cataract)",subs:["Public referral pathway","Cataract","General"],locations:[{clinic:"Metro South Central Referral Hub",address:"PO Box 4195",suburb:"Eight Mile Plains",state:"QLD",postcode:"4113",phone:"1300 364 155 (enquiries)",fax:"1300 364 248",email:"",note:"Routine public referrals for the Metro South catchment (PAH, Logan, QEII, Redland). GP Smart Referrals preferred; otherwise fax. Cataract triaged per QLD Clinical Prioritisation Criteria - include BCVA + refraction (within 12 months) and functional impact. BCVA 6/12 or better generally not accepted without clinical modifiers. Under-16s → Queensland Children's Hospital."}]},
+  {kind:'public',title:"",name:"Metro North - Central Patient Intake Unit (public referrals, incl. cataract)",subs:["Public referral pathway","Cataract","General"],locations:[{clinic:"Metro North Central Patient Intake Unit",address:"",suburb:"",state:"QLD",postcode:"",phone:"1300 364 938 (GP referral enquiries)",fax:"1300 364 952",email:"",note:"Routine public referrals for the Metro North catchment (RBWH, TPCH, Redcliffe, Caboolture). GP Smart Referrals preferred; otherwise fax. Cataract surgery delivered via STARS. Include BCVA + refraction (within 12 months). BCVA 6/12 or better generally not accepted unless clinical modifiers apply."}]},
+  {kind:'public',title:"",name:"Princess Alexandra Hospital (PAH) - Eye Clinic / Ophthalmology",subs:["General","Cataract","Glaucoma"],locations:[{clinic:"Princess Alexandra Hospital - Eye Clinic (Metro South)",address:"199 Ipswich Road",suburb:"Woolloongabba",state:"QLD",postcode:"4102",phone:"07 3176 2111 (switchboard)",fax:"07 3176 2201 (Eye Clinic - urgent referrals)",email:"",note:"Adult public ophthalmology, Metro South tertiary. Routine: refer via Metro South Central Referral Hub (Smart Referrals / fax 1300 364 248). Urgent: phone switch, ask for the on-call Ophthalmology Registrar, then fax the written referral to the Eye Clinic. No paediatric service."}]},
+  {kind:'public',title:"",name:"Royal Brisbane and Women's Hospital (RBWH) - Ophthalmology",subs:["General","Cataract","Glaucoma"],locations:[{clinic:"RBWH - Ophthalmology Outpatients, Level 8 Ned Hanlon Building (Metro North)",address:"Cnr Butterfield Street & Bowen Bridge Road",suburb:"Herston",state:"QLD",postcode:"4029",phone:"07 3497 3588 (outpatients) / 07 3646 8111 (switch)",fax:"1300 364 952 (Central Patient Intake Unit)",email:"RBWH-Ophthalmology-Outpatients@health.qld.gov.au",note:"Adult public ophthalmology, Metro North tertiary. Routine: refer via Central Patient Intake Unit (Smart Referrals / fax 1300 364 952). Urgent: phone switch 07 3646 8111, ask for the 24h on-call Ophthalmology Registrar. No laser refractive surgery."}]},
+  {kind:'public',title:"",name:"STARS - Cataract & Pterygium Service (Metro North)",subs:["Cataract"],locations:[{clinic:"Surgical, Treatment and Rehabilitation Service (STARS)",address:"296 Herston Road",suburb:"Herston",state:"QLD",postcode:"4029",phone:"07 3647 7111",fax:"1300 364 952 (Central Patient Intake Unit)",email:"",note:"Public cataract & pterygium surgery for Metro North patients. Referrals via the Central Patient Intake Unit. Not suitable if pregnant, >180kg, under 16, or significant ocular co-morbidities. Include BCVA + refraction."}]},
+  {kind:'public',title:"",name:"Queensland Children's Hospital (QCH) - Ophthalmology (paediatric)",subs:["Paediatric"],locations:[{clinic:"Queensland Children's Hospital - Ophthalmology",address:"501 Stanley Street",suburb:"South Brisbane",state:"QLD",postcode:"4101",phone:"07 3068 1111",fax:"",email:"",note:"Statewide public paediatric ophthalmology (under 16). Refer per Children's Health Queensland referral guidelines."}]},
+
+  /* CLINICS */
+  clinic("Queensland Eye Institute (QEI)",["Cornea","Cataract","Retina","Glaucoma","Oculoplastics","Neuro-ophthalmology"],{clinic:"Queensland Eye Institute (QEI), Woolloongabba Clinic",address:"87 Ipswich Road",suburb:"Woolloongabba",state:"QLD",postcode:"4102",phone:"07 3239 5000",fax:"07 3844 2246",email:"reception@qei.org.au",note:"Also Clayfield clinic and a day hospital at 140 Melbourne Street, South Brisbane. Multiple subspecialists - reception allocates."}),
+  clinic("Terrace Eye Centre",["Cataract","Retina","Oculoplastics","Glaucoma","Ocular oncology"],{clinic:"Terrace Eye Centre",address:"Level 2, 87 Wickham Terrace",suburb:"Spring Hill",state:"QLD",postcode:"4000",phone:"07 3831 0101",fax:"07 3831 3203",email:"admin@terraceeyecentre.com.au",note:""}),
+  clinic("City Eye Centre",["Retina","Cataract"],{clinic:"City Eye Centre, Watkins Medical Centre",address:"Level 10, 225 Wickham Terrace",suburb:"Brisbane",state:"QLD",postcode:"4000",phone:"07 3831 6888",fax:"07 3831 6883",email:"appointments@cityeye.com.au",note:""}),
+  clinic("Northside Eye Specialists",["General","Paediatric (5+)"],nesL()),
+  clinic("Conrad Eye Care (Wesley Hospital)",["General","Cataract","Paediatric"],cceL()),
+  clinic("Vision Eye Institute - Brisbane",["General","Cataract","Refractive/Laser","Retina","Glaucoma"],{clinic:"Vision Eye Institute, Brisbane (RiverCity Private Hospital)",address:"Level 2, 401 Milton Road",suburb:"Auchenflower",state:"QLD",postcode:"4066",phone:"07 3736 3015",fax:"07 3736 3096",email:"",note:"Co-located with RiverCity Private Hospital day surgery. Multiple ophthalmologists."}),
+  clinic("Brisbane North Eye Centre",["Cataract","Retina","Glaucoma","Cornea","Oculoplastics","Refractive/Laser"],bnecL()),
+  clinic("Westside Eye Clinic",["Retina","Cataract","General"],{clinic:"Westside Eye Clinic",address:"Suite 1, 107 Dandenong Road",suburb:"Jamboree Heights",state:"QLD",postcode:"4074",phone:"07 3715 5555",fax:"07 3715 5933",email:"hello@westsideeyeclinic.com.au",note:"Near Mt Ommaney, western suburbs."}),
+  clinic("Southside Eye Centre",["Cataract","Cornea","Refractive/Laser"],{clinic:"Southside Eye Centre",address:"Level 1, 1985 Logan Road",suburb:"Upper Mount Gravatt",state:"QLD",postcode:"4122",phone:"07 3849 1511",fax:"",email:"reception@southsideeyecentre.com.au",note:""}),
+  clinic("Valley Eye Specialists",["Paediatric","General"],vesLn("Strong paediatric focus (infants & children) plus adult general.")),
+  clinic("Queensland Eye & Retina Specialists",["Retina (medical)","Retina (surgical)","Cataract","Oculoplastics","General"],qersL()),
+  clinic("The Eye Health Centre",["Cornea","Cataract","Refractive/Laser","Keratoconus"],tehcL()),
+  clinic("OKKO Eye Specialist Centre",["Oculoplastics","Retina (medical)","Cataract","Refractive/Laser"],okkoLn()),
+  clinic("Brisbane Eye Clinic",["Retina (surgical)","Glaucoma","Cataract","General"],becL()),
+
+  /* DOCTORS - QEI */
+  qei("Dr","Brendan Cronin",["Cornea","Cataract","Anterior segment"]),
+  qei("Dr","David Gunn",["Cornea","Cataract","Refractive/Laser","Keratoconus"]),
+  qei("Dr","Lee Holland",["Cornea","Cataract","Refractive/Laser","Glaucoma"]),
+  qei("A.Prof","Anthony Kwan",["Retina (surgical)","Macula"]),
+  qei("Dr","Jonathan Lai",["General","Neuro-ophthalmology","Glaucoma"]),
+  qei("Dr","Alexandra Manta",["Oculoplastics"]),
+  qei("Dr","Alexander Newman",["Retina (medical)","Cataract","Uveitis"]),
+  qei("Dr","Anthony Pane",["Neuro-ophthalmology"]),
+  qei("Dr","Angela Richards",["Cataract","Oculoplastics","Retina (medical)"]),
+  qei("Dr","Geoffrey Ryan",["Cataract","Cornea","Glaucoma","Refractive/Laser"]),
+  qei("A.Prof","Abhishek Sharma",["Retina (medical)","Retina (surgical)"]),
+  qei("Dr","Elias Kehdi",["Paediatric","Retina"]),
+
+  /* DOCTORS - Terrace Eye Centre */
+  tec("Dr","Albert Aralar",["General","Cataract"]),
+  tec("Dr","Peter Beckingsale",["Cataract","Glaucoma"]),
+  tec("Dr","Sonia Ahn Yuen",["General","Cataract"]),
+  tec("Dr","Mark Donaldson",["Retina (surgical)","Retina (medical)"]),
+  tec("Dr","William Glasson",["General","Cataract"]),
+  {kind:'doctor',title:"Dr",name:"Michael Hogden",subs:["General","Cataract"],locations:[tecLn(),tehcL()]},
+  tec("Dr","Lindsay McGrath",["Oculoplastics","Ocular oncology"]),
+  tec("Prof","Timothy Sullivan",["Oculoplastics","Orbital","Ocular oncology"]),
+  tec("Dr","Timothy Beckman",["General","Cataract"]),
+
+  /* DOCTORS - City Eye Centre */
+  cec("A.Prof","Lawrence Lee",["Retina (surgical)","Retina (medical)","Cataract","Paediatric retina"]),
+  cec("Dr","Jennifer Chen",["General","Cataract"]),
+
+  /* DOCTORS - Northside Eye Specialists */
+  {kind:'doctor',title:"Dr",name:"Michael Forrest",subs:["General","Paediatric (5+)"],locations:[nesL()]},
+  {kind:'doctor',title:"Dr",name:"Bradley Horsburgh",subs:["General","Paediatric (5+)"],locations:[nesL()]},
+
+  /* DOCTORS - Conrad Eye Care */
+  {kind:'doctor',title:"Dr",name:"Diana Conrad",subs:["General","Cataract","Paediatric"],locations:[cceL()]},
+  {kind:'doctor',title:"Dr",name:"Maria Moon",subs:["General","Cataract","Paediatric"],locations:[cceL()]},
+
+  /* DOCTORS - Brisbane North Eye Centre (phone unverified) */
+  bnec("Dr","Tai Smith",["Oculoplastics","Orbital","Lacrimal"]),
+  {kind:'doctor',title:"Dr",name:"Judy Ku",subs:["Cataract","Glaucoma","Cornea","Pterygium"],languages:["English","Mandarin"],locations:[bnecL()]},
+  {kind:'doctor',title:"Prof",name:"Graham Lee",subs:["Complex cataract","Anterior segment","Cornea","Glaucoma"],locations:[bnecL(),cecLn("Also consults here.")]},
+  {kind:'doctor',title:"Dr",name:"Kevin Vandeleur",subs:["Cataract","Refractive/Laser","Retina (surgical)","Retinal detachment"],locations:[bnecL("Also recorded as 'Bill' Vandeleur in some sources - verify first name.")]},
+
+  /* DOCTOR - Joseph Park (two locations) */
+  {kind:'doctor',title:"Dr",name:"Joseph Park",subs:["Retina (medical)","Retina (surgical)","Cataract","General"],locations:[
+    {clinic:"Westside Eye Clinic",address:"Suite 1, 107 Dandenong Road",suburb:"Jamboree Heights",state:"QLD",postcode:"4074",phone:"07 3715 5555",fax:"07 3715 5933",email:"hello@westsideeyeclinic.com.au",note:"Near Mt Ommaney. Intravitreal injections & OCT on site."},
+    bnecL()
+  ]},
+
+  /* DOCTOR - Cameron McLintock */
+  {kind:'doctor',title:"Dr",name:"Cameron McLintock",subs:["Cataract","Cornea","Refractive/Laser","Keratoconus","Pterygium"],locations:[
+    {clinic:"Southside Eye Centre",address:"Level 1, 1985 Logan Road",suburb:"Upper Mount Gravatt",state:"QLD",postcode:"4122",phone:"07 3849 1511",fax:"",email:"reception@southsideeyecentre.com.au",note:"Also corneal / anterior segment surgeon (public) at Princess Alexandra Hospital."}
+  ]},
+
+  /* DOCTORS - Valley Eye Specialists (phone unverified) */
+  ves("Dr","Jayne Camuglia",["Paediatric","General"]),
+  ves("Dr","Juanita Pappalardo",["Paediatric","General"]),
+  {kind:'doctor',title:"Prof",name:"Shuan Dai",subs:["Paediatric"],locations:[vesLn("Also Director of Ophthalmology, Queensland Children's Hospital.")]},
+  ves("Dr","Richa Sharma",["Paediatric","General"]),
+
+  /* DOCTORS - Queensland Eye & Retina Specialists */
+  qers("Dr","Sean Cheng",["Retina (surgical)","Retina (medical)","Cataract"]),
+  qers("Dr","Nirosha Paramanathan",["General","Cataract"]),
+  qers("Dr","Katie Chen",["Oculoplastics","General"]),
+  qers("Dr","Andrew Dorman",["Retina (surgical)","Retina (medical)"]),
+  qers("Dr","James Sax",["Retina (surgical)","Retina (medical)","Uveitis"]),
+
+  /* DOCTORS - The Eye Health Centre */
+  tehc("Dr","Andrew Apel",["Cornea","Refractive/Laser","Cataract","Keratoconus"]),
+  tehc("Dr","John Hogden",["Cornea","Anterior segment","Refractive/Laser","Cataract"]),
+  tehc("Dr","Aaron Chidgey",["Retina (surgical)","Trauma","General"]),
+
+  /* DOCTORS - OKKO Eye Specialist Centre */
+  {kind:'doctor',title:"Dr",name:"Delia Wang",subs:["Oculoplastics","Retina (medical)","Cataract"],languages:["English","Mandarin","Cantonese"],locations:[okkoMtG("","Dr Wang consults here Tuesdays"),okkoAuch("","Dr Wang consults here Thursdays")]},
+  {kind:'doctor',title:"Dr",name:"Matthew Russell",subs:["Cataract","Refractive/Laser"],locations:[okkoAuch(),okkoMtG()]},
+  {kind:'doctor',title:"Dr",name:"Eve Hsing",subs:["Retina (medical)","Glaucoma","Cataract","General"],locations:[okkoAuch(),okkoMtG()]},
+
+  /* DOCTORS - Brisbane Eye Clinic */
+  bec("Dr","Erwin Groeneveld",["Retina (surgical)","Retina (medical)","Glaucoma","Cataract"]),
+  bec("Dr","Fiona Chan",["General","Cataract"]),
+
+  /* DOCTORS - Vision Eye Institute Brisbane */
+  {kind:'doctor',title:"Dr",name:"Sunil Warrier",subs:["Cataract","Glaucoma","General"],locations:[veiL()]},
+  {kind:'doctor',title:"Dr",name:"Lee Lenton",subs:["Refractive/Laser","Cataract"],locations:[veiL("Reported retired from clinical practice (per VEI site) - verify before referring; the clinic continues these services.")]},
+  {kind:'doctor',title:"Dr",name:"Tom La Nauze",subs:["General"],locations:[veiL("VEI Brisbane affiliation to confirm.")]},
+
+  /* DOCTORS - Brisbane North Eye Centre (added; phone unverified) */
+  {kind:'doctor',title:"Dr",name:"Lily Ooi",subs:["General"],locations:[bnecL()]},
+  {kind:'doctor',title:"Dr",name:"James English",subs:["Cataract","Glaucoma"],locations:[bnecL()]},
+
+  /* DOCTORS - Spring Hill, clinic not confirmed */
+  {kind:'doctor',title:"Dr",name:"Archie Lamb",subs:["General"],locations:[{clinic:"St Andrew's Place",address:"Level 2, Suite 306, 33 North Street",suburb:"Spring Hill",state:"QLD",postcode:"4000",phone:"07 3832 9936",fax:"07 3832 2261",email:"archie@doctorarchielamb.com",hours:"Mon-Thu 8:00am-4:00pm (Fri-Sun closed)",note:"St Andrew's Place (Head Office)."}]},
+  {kind:'doctor',title:"Dr",name:"Jaclyn White",subs:["General"],locations:[vesLn(),bnecL()]},
+];
+
+const PRIVATE_FEE="Private · initial consult ≈ $200-$350 (≈ $120-270 gap after Medicare rebate). Guide only - confirm when booking.";
+const PUBLIC_FEE="Public · no consultation fee - referral criteria & waitlist apply.";
+
+const STORE_KEY="ophthalReferralFinder.v8";
+let DATA=[],activeSub=null,activeKind=null,ddIndex=-1,editIndex=null;
+
+function load(){try{const raw=localStorage.getItem(STORE_KEY);if(raw){DATA=JSON.parse(raw);return;}}catch(e){}DATA=JSON.parse(JSON.stringify(SEED));}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(DATA));}catch(e){toast("Couldn't save to this browser - use Export to keep your changes.");}}
+function systemOf(d){return (d.kind||'doctor')==='public'?'public':'private';}
+const HOURS=[
+ ["Queensland Eye Institute","Mon-Fri 8:00am-4:30pm"],
+ ["Terrace Eye Centre","Mon-Fri 8:00am-4:30pm"],
+ ["City Eye Centre","Mon-Fri (confirm hours)"],
+ ["Southside Eye Centre","Mon-Fri 8:30am-4:30pm"],
+ ["Vision Eye Institute","Mon-Fri 8:30am-5:00pm"],
+ ["Northside Eye","Mon-Fri (confirm hours)"],
+ ["Conrad Eye","Mon-Fri (confirm hours)"],
+ ["Brisbane North Eye Centre","Mon-Fri (confirm hours)"],
+ ["Westside Eye Clinic","Mon-Fri (confirm hours)"],
+ ["Valley Eye","Mon-Fri (confirm hours)"],
+ ["Queensland Eye & Retina","Mon-Fri (confirm hours)"],
+ ["Eye Health Centre","Mon-Fri (confirm hours)"],
+ ["OKKO","Mon-Fri (confirm hours)"],
+ ["Brisbane Eye Clinic","Mon-Fri (confirm hours)"],
+ ["Princess Alexandra","Mon-Fri ~8:00am-3:30pm (outpatients)"],
+ ["RBWH","Mon-Fri ~8:00am-3:30pm (outpatients)"],
+ ["STARS","Mon-Fri (confirm)"],
+ ["Queensland Children's Hospital","Mon-Fri (confirm)"],
+ ["Central Referral Hub","Referral by fax / Smart Referrals - no walk-in"],
+ ["Central Patient Intake","Referral by fax / Smart Referrals - no walk-in"],
+];
+function hoursFor(l){if(l.hours)return l.hours;const c=(l.clinic||"").toLowerCase();if(!c.trim())return "";for(const e of HOURS){if(c.includes(e[0].toLowerCase()))return e[1];}return "Mon-Fri (confirm hours)";}
+
+const CAT_MAP={"Cataract":"Cataract","Complex cataract":"Cataract","Cornea":"Cornea & Refractive","Anterior segment":"Cornea & Refractive","Refractive/Laser":"Cornea & Refractive","Keratoconus":"Cornea & Refractive","Pterygium":"Cornea & Refractive","Glaucoma":"Glaucoma","Retina":"Retina & Macula","Retina (medical)":"Retina & Macula","Retina (surgical)":"Retina & Macula","Macula":"Retina & Macula","Retinal detachment":"Retina & Macula","Uveitis":"Retina & Macula","Paediatric retina":"Retina & Macula","Oculoplastics":"Oculoplastics & Orbital","Orbital":"Oculoplastics & Orbital","Lacrimal":"Oculoplastics & Orbital","Ocular oncology":"Oculoplastics & Orbital","Paediatric":"Paediatric","Paediatric (5+)":"Paediatric","Neuro-ophthalmology":"Neuro-ophthalmology","Trauma":"General","General":"General","Public":null,"Public referral pathway":null};
+const CAT_ORDER=["Cataract","Cornea & Refractive","Glaucoma","Retina & Macula","Oculoplastics & Orbital","Paediatric","Neuro-ophthalmology","General"];
+function cats(subs){const out=[];(subs||[]).forEach(t=>{let c=(t in CAT_MAP)?CAT_MAP[t]:t;if(c&&out.indexOf(c)<0)out.push(c);});out.sort((a,b)=>{const ia=CAT_ORDER.indexOf(a),ib=CAT_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});return out;}
+function allSubs(){const s=new Set();DATA.forEach(d=>cats(d.subs).forEach(x=>s.add(x)));const arr=[...s];arr.sort((a,b)=>{const ia=CAT_ORDER.indexOf(a),ib=CAT_ORDER.indexOf(b);return ((ia<0?99:ia)-(ib<0?99:ib))||a.localeCompare(b);});return arr;}
+const KINDS=[["","All"],["doctor","Ophthalmologists"],["clinic","Clinics"],["public","Public"]];
+function renderKindFilters(){
+  let h='';
+  KINDS.forEach(([k,label])=>{const on=(activeKind===(k||null))?'on':'';h+=`<button class="seg ${on}" onclick="setKind(${k?`'${k}'`:'null'})">${label}</button>`;});
+  document.getElementById("kindFilters").innerHTML=h;
+}
+function renderFilters(){
+  const sel=document.getElementById("subSelect");const subs=allSubs();
+  let h='<option value="">All subspecialties</option>';
+  subs.forEach(s=>{h+=`<option value="${attr(s)}" ${activeSub===s?'selected':''}>${esc(s)}</option>`;});
+  sel.innerHTML=h;
+}
+function setSub(s){activeSub=s||null;render();}
+function setKind(k){activeKind=k;renderKindFilters();render();}
+
+function matchEntry(d,q){
+  if(!q)return true;q=q.toLowerCase();
+  if((d.title+" "+d.name).toLowerCase().includes(q))return true;
+  if((d.subs||[]).some(s=>s.toLowerCase().includes(q)))return true;
+  if(cats(d.subs).some(s=>s.toLowerCase().includes(q)))return true;
+  if((systemOf(d)).includes(q))return true;
+  return (d.locations||[]).some(l=>
+    (l.clinic||"").toLowerCase().includes(q)||(l.suburb||"").toLowerCase().includes(q)||
+    (l.address||"").toLowerCase().includes(q)||(l.postcode||"").toLowerCase().includes(q)||
+    (l.note||"").toLowerCase().includes(q));
+}
+
+function render(){
+  const q=document.getElementById("search").value.trim();
+  let list=DATA.map((d,i)=>({d,i}))
+    .filter(x=>matchEntry(x.d,q))
+    .filter(x=>activeKind===null||(x.d.kind||'doctor')===activeKind)
+    .filter(x=>activeSub===null||cats(x.d.subs).includes(activeSub));
+  const order={public:0,clinic:1,doctor:2};
+  list.sort((a,b)=>{const ka=order[a.d.kind||'doctor'],kb=order[b.d.kind||'doctor'];return ka!==kb?ka-kb:a.d.name.localeCompare(b.d.name);});
+  const label=activeKind?KINDS.find(k=>k[0]===activeKind)[1]:'';
+  document.getElementById("count").textContent=`${list.length} ${list.length===1?'result':'results'}${q?` · "${q}"`:''}${label?` · ${label}`:''}${activeSub?` · ${activeSub}`:''}`;
+  document.getElementById("grid").innerHTML=list.map(x=>cardHTML(x.d,x.i)).join("");
+  document.getElementById("emptyState").style.display=list.length?"none":"block";
+}
+
+function cardHTML(d,idx){
+  const kind=d.kind||'doctor',sys=systemOf(d);
+  const sysBadge=sys==='public'?'<span class="sys-badge public">Public</span>':'<span class="sys-badge private">Private</span>';
+  const qual=kind==='clinic'?'Clinic':kind==='public'?'Hospital / pathway':'';
+  const subline=cats(d.subs).join(' · ');
+  const fee=sys==='public'?'No consult fee · referral &amp; waitlist apply':'Initial consult ≈ $200-$350 · ≈ $120-270 gap after rebate';
+  const langLine=(d.languages&&d.languages.length)?'<p class="langs">Languages: '+esc(d.languages.join(", "))+'</p>':'';
+  const locs=(d.locations||[]).map((l,li)=>locHTML(d,l,idx,li)).join("");
+  const heading=(d.title?esc(d.title)+" ":"")+esc(d.name);
+  return `<div class="card" id="card-${idx}">
+    <div class="card-top">
+      <div>
+        <p class="name">${heading}</p>
+        <p class="meta">${qual?`<span class="qual">${esc(qual)}</span> · `:''}${esc(subline)}</p>
+      </div>
+      ${sysBadge}
+    </div>
+    <p class="fee" title="${attr(sys==='public'?PUBLIC_FEE:PRIVATE_FEE)}">${fee}</p>
+    ${langLine}
+    ${locs}
+    <div class="card-foot">
+      <button class="linkbtn" onclick="openEdit(${idx})">Edit</button>
+      <button class="linkbtn del" onclick="quickDelete(${idx})">Delete</button>
+    </div></div>`;
+}
+function locHTML(d,l,idx,li){
+  const incomplete=!(l.phone||l.email||l.fax);
+  const hrs=hoursFor(l);
+  const lines=[];
+  if(l.phone)lines.push(`<div><span class="k">T</span>${esc(l.phone)}</div>`);
+  if(l.fax)lines.push(`<div><span class="k">F</span>${esc(l.fax)}</div>`);
+  if(l.email)lines.push(`<div><span class="k">E</span>${esc(l.email)}</div>`);
+  const addrLine=[l.address,l.suburb,l.state,l.postcode].filter(Boolean).join(", ");
+  return `<div class="loc">
+    <p class="clinic">${esc(l.clinic||"")}</p>
+    ${addrLine?`<p class="addr">${esc(addrLine)}</p>`:''}
+    ${hrs?`<p class="hours">Open: ${esc(hrs)}</p>`:''}
+    <div class="contacts">${lines.join("")||'<span class="k" style="width:auto">No phone/email on file</span>'}</div>
+    ${l.note?`<p class="note">${esc(l.note)}</p>`:''}
+    <div class="loc-foot">
+      ${incomplete?'<span class="verify-badge">Verify details</span>':'<span></span>'}
+      <button class="copybtn" onclick="copyLoc(${idx},${li},this)">⧉ Copy</button>
+    </div></div>`;
+}
+
+function buildBlock(d,l){
+  const strip=v=>String(v||"").replace(/\s*\([^)]*\)/g,"").trim();
+  const out=[];const kind=d.kind||'doctor';
+  if(kind==='doctor'){out.push(((d.title?d.title+" ":"")+d.name).trim());if(l.clinic)out.push(l.clinic);}
+  else{out.push(l.clinic||((d.title?d.title+" ":"")+d.name).trim());}
+  const addrLine=[l.address,l.suburb,l.state,l.postcode].filter(Boolean).join(", ");
+  if(addrLine)out.push(addrLine);
+  if(l.phone)out.push("T: "+strip(l.phone));
+  if(l.fax)out.push("F: "+strip(l.fax));
+  if(l.email)out.push("E: "+strip(l.email));
+  return out.join("\n");
+}
+function copyLoc(idx,li,btn){
+  const d=DATA[idx],l=d.locations[li],text=buildBlock(d,l);
+  copyText(text).then(ok=>{
+    if(ok){const o=btn.innerHTML;btn.innerHTML="✓ Copied";btn.classList.add("done");setTimeout(()=>{btn.innerHTML=o;btn.classList.remove("done");},1400);}
+    else{toast("Copy blocked - text shown so you can copy it manually.");window.prompt("Copy this referral block:",text);}
+  });
+}
+function copyText(text){return new Promise(resolve=>{if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(()=>resolve(true)).catch(()=>resolve(legacyCopy(text)));}else{resolve(legacyCopy(text));}});}
+function legacyCopy(text){try{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.top="-1000px";document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand("copy");document.body.removeChild(ta);return ok;}catch(e){return false;}}
+
+function onSearch(){
+  render();
+  const q=document.getElementById("search").value.trim().toLowerCase();
+  const dd=document.getElementById("dropdown");
+  if(!q){dd.classList.remove("show");dd.innerHTML="";ddIndex=-1;return;}
+  const matches=[];
+  DATA.forEach((d,i)=>{if(matchEntry(d,q)){const suburbs=[...new Set((d.locations||[]).map(l=>l.suburb).filter(Boolean))].join(" · ");const tag=systemOf(d)==='public'?'Public · ':(d.kind==='clinic'?'Clinic · ':'');matches.push({i,name:(d.title?d.title+" ":"")+d.name,meta:tag+suburbs});}});
+  matches.sort((a,b)=>a.name.localeCompare(b.name));
+  const top=matches.slice(0,8);ddIndex=-1;
+  if(!top.length){dd.innerHTML='<div class="dd-empty">No matches</div>';dd.classList.add("show");return;}
+  dd.innerHTML=top.map((m,k)=>`<div class="dd-item" data-k="${k}" data-i="${m.i}" onclick="jumpTo(${m.i})"><span class="dd-name">${esc(m.name)}</span><span class="dd-meta">${esc(m.meta||"")}</span></div>`).join("");
+  dd.classList.add("show");
+}
+function onSearchKey(e){
+  const dd=document.getElementById("dropdown"),items=[...dd.querySelectorAll(".dd-item")];
+  if(!items.length)return;
+  if(e.key==="ArrowDown"){e.preventDefault();ddIndex=Math.min(ddIndex+1,items.length-1);paintDD(items);}
+  else if(e.key==="ArrowUp"){e.preventDefault();ddIndex=Math.max(ddIndex-1,0);paintDD(items);}
+  else if(e.key==="Enter"){if(ddIndex>=0){e.preventDefault();jumpTo(parseInt(items[ddIndex].dataset.i));}}
+  else if(e.key==="Escape"){dd.classList.remove("show");}
+}
+function paintDD(items){items.forEach((it,k)=>it.classList.toggle("active",k===ddIndex));if(items[ddIndex])items[ddIndex].scrollIntoView({block:"nearest"});}
+function jumpTo(i){
+  document.getElementById("dropdown").classList.remove("show");
+  activeSub=null;activeKind=null;renderKindFilters();renderFilters();render();
+  const card=document.getElementById("card-"+i);
+  if(card){card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("flash");setTimeout(()=>card.classList.remove("flash"),1600);}
+}
+document.addEventListener("click",e=>{if(!e.target.closest(".searchbox"))document.getElementById("dropdown").classList.remove("show");});
+
+function blankLoc(){return{clinic:"",address:"",suburb:"",state:"QLD",postcode:"",phone:"",fax:"",email:"",note:""};}
+function openAdd(){editIndex=null;document.getElementById("modalTitle").textContent="Add entry";document.getElementById("deleteBtn").style.display="none";fillForm({kind:"doctor",title:"",name:"",subs:[],locations:[blankLoc()]});showModal();}
+function openEdit(i){editIndex=i;document.getElementById("modalTitle").textContent="Edit entry";document.getElementById("deleteBtn").style.display="inline-block";fillForm(DATA[i]);showModal();}
+function fillForm(d){
+  document.getElementById("f_kind").value=d.kind||"doctor";
+  document.getElementById("f_title").value=d.title||"";
+  document.getElementById("f_name").value=d.name||"";
+  document.getElementById("f_subs").value=(d.subs||[]).join(", ");
+  document.getElementById("f_langs").value=(d.languages||[]).join(", ");
+  const c=document.getElementById("locContainer");c.innerHTML="";
+  (d.locations&&d.locations.length?d.locations:[blankLoc()]).forEach(l=>c.appendChild(locBlockEl(l)));
+}
+function locBlockEl(l){
+  const div=document.createElement("div");div.className="loc-block";
+  div.innerHTML=`
+    <div class="lh"><b>Location</b><button class="linkbtn del" onclick="this.closest('.loc-block').remove()">Remove</button></div>
+    <div class="field full" style="margin-bottom:10px"><label>Clinic / service name</label><input class="l_clinic" value="${attr(l.clinic)}"></div>
+    <div class="field full" style="margin-bottom:10px"><label>Street address</label><input class="l_address" value="${attr(l.address)}"></div>
+    <div class="frow">
+      <div class="field"><label>Suburb</label><input class="l_suburb" value="${attr(l.suburb)}"></div>
+      <div class="field" style="max-width:90px"><label>State</label><input class="l_state" value="${attr(l.state)}"></div>
+      <div class="field" style="max-width:110px"><label>Postcode</label><input class="l_postcode" value="${attr(l.postcode)}"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Phone</label><input class="l_phone" value="${attr(l.phone)}"></div>
+      <div class="field"><label>Fax</label><input class="l_fax" value="${attr(l.fax)}"></div>
+    </div>
+    <div class="field full" style="margin-bottom:10px"><label>Email</label><input class="l_email" value="${attr(l.email)}"></div>
+    <div class="field full" style="margin-bottom:10px"><label>Opening days / hours</label><input class="l_hours" value="${attr(l.hours)}"></div>
+    <div class="field full"><label>Note (referral pathway, criteria, etc.)</label><textarea class="l_note">${esc(l.note||"")}</textarea></div>`;
+  return div;
+}
+function addLocBlock(){document.getElementById("locContainer").appendChild(locBlockEl(blankLoc()));}
+function saveEntry(){
+  const name=document.getElementById("f_name").value.trim();
+  if(!name){toast("A name is required.");return;}
+  const entry={
+    kind:document.getElementById("f_kind").value,
+    title:document.getElementById("f_title").value.trim(),
+    name:name,
+    subs:document.getElementById("f_subs").value.split(",").map(s=>s.trim()).filter(Boolean),
+    languages:document.getElementById("f_langs").value.split(",").map(s=>s.trim()).filter(Boolean),
+    locations:[...document.querySelectorAll("#locContainer .loc-block")].map(b=>({
+      clinic:b.querySelector(".l_clinic").value.trim(),
+      address:b.querySelector(".l_address").value.trim(),
+      suburb:b.querySelector(".l_suburb").value.trim(),
+      state:b.querySelector(".l_state").value.trim(),
+      postcode:b.querySelector(".l_postcode").value.trim(),
+      phone:b.querySelector(".l_phone").value.trim(),
+      fax:b.querySelector(".l_fax").value.trim(),
+      email:b.querySelector(".l_email").value.trim(),
+      note:b.querySelector(".l_note").value.trim(),
+      hours:b.querySelector(".l_hours").value.trim(),
+    }))
+  };
+  if(!entry.locations.length)entry.locations=[blankLoc()];
+  if(editIndex===null)DATA.push(entry);else DATA[editIndex]=entry;
+  save();renderKindFilters();renderFilters();render();closeModal();
+  toast(editIndex===null?"Added.":"Saved.");
+}
+function deleteCurrent(){if(editIndex!==null){DATA.splice(editIndex,1);save();renderKindFilters();renderFilters();render();closeModal();toast("Deleted.");}}
+function quickDelete(i){if(confirm("Delete "+(DATA[i].title?DATA[i].title+" ":"")+DATA[i].name+"?")){DATA.splice(i,1);save();renderKindFilters();renderFilters();render();toast("Deleted.");}}
+function showModal(){document.getElementById("modalBg").classList.add("show");}
+function closeModal(){document.getElementById("modalBg").classList.remove("show");}
+document.getElementById("modalBg").addEventListener("click",e=>{if(e.target.id==="modalBg")closeModal();});
+
+function exportData(){const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ophthal-referral-data.json";a.click();URL.revokeObjectURL(a.href);toast("Backup file downloaded.");}
+function importData(ev){const file=ev.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(!Array.isArray(p))throw 0;DATA=p;save();renderKindFilters();renderFilters();render();toast("Imported "+p.length+" entries.");}catch(e){toast("Couldn't read that file - expected an exported JSON backup.");}};r.readAsText(file);ev.target.value="";}
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function attr(s){return esc(s).replace(/"/g,"&quot;");}
+let toastTimer;
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2600);}
+
+load();renderKindFilters();renderFilters();render();
+</script>
+</body>
+</html>
